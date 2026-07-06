@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>NaWi Jeopardy - Versuche-Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --panel-bg: #131c2e;
+            --border-color: #1e293b;
+            --primary: #38bdf8;
+            --accent: #facc15;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        body { 
+            font-family: 'Space Grotesk', sans-serif; 
+            background-color: var(--bg-dark); 
+            color: #f8fafc; 
+            margin: 0; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+
+        h1 { 
+            font-family: 'Poppins', sans-serif; 
+            font-size: 38px; 
+            font-weight: 900;
+            color: transparent;
+            background: linear-gradient(to right, #38bdf8, #facc15);
+            -webkit-background-clip: text;
+            margin: 0 0 25px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            text-align: center; 
+        }
+        
+        .main-wrapper { display: flex; gap: 30px; width: 1400px; max-width: 100%; }
+        .left-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Das Spielfeld-Raster */
+        .jeopardy-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
+        
+        .category-card { 
+            background: linear-gradient(135deg, #1e3a8a, #1e40af); 
+            border: 2px solid var(--primary); 
+            border-radius: 16px; 
+            padding: 18px 10px; 
+            text-align: center; 
+            font-family: 'Poppins', sans-serif; 
+            font-size: 18px; 
+            font-weight: 700; 
+            color: #ffffff; 
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.15);
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 55px; 
+        }
+
+        .point-card { 
+            background: var(--panel-bg); 
+            border: 2px solid #334155; 
+            border-radius: 16px; 
+            padding: 35px 10px; 
+            text-align: center; 
+            font-family: 'Poppins', sans-serif; 
+            font-size: 46px; 
+            font-weight: 900; 
+            color: var(--accent); 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .point-card:hover { 
+            background: #1e293b;
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(250, 204, 21, 0.2);
+        }
+        .point-card.played { 
+            background: #0f172a; 
+            border-color: #1e293b; 
+            color: #334155; 
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none; 
+        }
+
+        /* Rechte Seitenleiste */
+        .sidebar-teams { width: 380px; min-width: 380px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .setup-box { 
+            background: var(--panel-bg); 
+            border: 2px solid var(--border-color); 
+            border-radius: 20px; 
+            padding: 20px; 
+        }
+        .setup-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 700; font-size: 15px;}
+        
+        select { 
+            font-family: 'Space Grotesk', sans-serif; 
+            font-weight: 700; 
+            padding: 6px 10px; 
+            border: 2px solid #334155; 
+            border-radius: 10px; 
+            background: var(--bg-dark); 
+            color: white;
+            font-size: 14px; 
+            outline: none;
+        }
+        
+        .team-list-container { display: flex; flex-direction: column; gap: 15px; max-height: 520px; overflow-y: auto; padding-right: 5px; }
+        
+        .team-card { 
+            background: var(--panel-bg); 
+            border: 2px solid var(--border-color); 
+            border-radius: 20px; 
+            padding: 15px; 
+        }
+        
+        .team-title { 
+            font-family: 'Poppins', sans-serif; 
+            font-weight: 700; 
+            font-size: 18px; 
+            color: #ffffff; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 8px; 
+            margin-bottom: 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .team-attempts {
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .score-val { 
+            font-family: 'Poppins', sans-serif;
+            font-size: 32px; 
+            color: var(--success); 
+            font-weight: 900; 
+            margin-right: 10px; 
+        }
+        
+        .score-control { display: flex; align-items: center; gap: 6px; }
+        .score-btn { background: #1e293b; color: white; border: 1px solid #334155; border-radius: 8px; cursor: pointer; font-weight: 700; padding: 4px 10px; font-size: 16px; }
+
+        .team-member { 
+            font-size: 16px; 
+            padding: 6px 10px; 
+            margin: 4px 0; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .team-member.is-speaker { 
+            background: rgba(34, 197, 94, 0.15); 
+            font-weight: 700; 
+            border: 1px solid var(--success); 
+            color: #4ade80;
+        }
+        .speaker-badge { font-size: 12px; background: var(--success); color: var(--bg-dark); padding: 2px 6px; border-radius: 6px; font-weight: 700; }
+        
+        /* Popups */
+        .popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 10, 19, 0.95); z-index: 1000; justify-content: center; align-items: center; }
+        .popup-content { background: var(--panel-bg); border: 2px solid var(--primary); border-radius: 28px; width: 750px; max-width: 90%; padding: 40px; text-align: center; }
+        .popup-category { font-family: 'Poppins', sans-serif; font-size: 16px; text-transform: uppercase; color: var(--primary); margin-bottom: 15px; font-weight: 700; }
+        .popup-question { font-size: 28px; font-weight: 700; line-height: 1.4; margin-bottom: 30px; color: #ffffff; }
+        .popup-answer { display: none; font-size: 24px; font-weight: 700; color: #ffffff; background: var(--bg-dark); border: 2px solid var(--success); padding: 18px; border-radius: 16px; margin-bottom: 30px; }
+        
+        .popup-team-select { margin: 20px 0; background: var(--bg-dark); border: 2px solid var(--border-color); padding: 15px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .popup-team-select label { font-weight: 700; color: var(--primary); font-size: 16px; }
+
+        .popup-btn { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: white; border: none; padding: 14px 28px; border-radius: 12px; cursor: pointer; text-transform: uppercase; font-size: 16px; margin: 5px; transition: all 0.2s; }
+        .btn-green { background: var(--success); }
+        .btn-red { background: var(--danger); } 
+        .btn-blue { background: #2563eb; width: 100%; max-width: 300px; font-size: 18px;}
+        .btn-orange { background: linear-gradient(135deg, #ea580c, #f97316); width: 100%; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; padding: 10px; border-radius: 10px; margin-top: 5px; }
+
+        /* Gewinner-Bildschirm */
+        .winner-content { border: 4px solid var(--accent); box-shadow: 0 0 50px rgba(250, 204, 21, 0.3); }
+        .winner-title { font-family: 'Poppins', sans-serif; font-size: 42px; font-weight: 900; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; }
+        .winner-score { font-size: 28px; font-weight: 700; margin-bottom: 25px; color: var(--success); }
+    </style>
+</head>
+<body>
+
+<div id="startScreen" style="position: fixed; top:0; left:0; width:100%; height:100%; background: #0b0f19; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <h1 style="color: white;">Wer ist heute da?</h1>
+    <div id="attendanceList" style="background: #131c2e; padding: 20px; border-radius: 16px; width: 350px; max-height: 400px; overflow-y: auto; margin-bottom: 20px; border: 2px solid #38bdf8;">
+        </div>
+    <button class="popup-btn btn-green" onclick="startSpiel()">Spiel starten 🚀</button>
+</div>
+
+    <h1> Klasse 6d - NaWi Jeopardy </h1>
+
+    <div class="main-wrapper">
+        <div class="left-content">
+            <div class="jeopardy-board" id="board">
+                <div class="category-card">🌿 Tiere & Pflanzen</div>
+                <div class="category-card">🌍 Weltall & Erde</div>
+                <div class="category-card">⚡ Phänomene</div>
+                <div class="category-card">🫁 Unser Körper</div>
+                </div>
+        </div>
+
+        <div class="sidebar-teams">
+            <div class="setup-box">
+                <div class="setup-row">
+                    <label for="teamSizeSelect">Teamgröße:</label>
+                    <select id="teamSizeSelect">
+                        <option value="3">3er-Gruppen</option>
+                        <option value="4" selected>4er-Gruppen</option>
+                        <option value="5">5er-Gruppen</option>
+                        <option value="6">6er-Gruppen</option>
+                        <option value="7">7er-Gruppen</option>
+                        <option value="8">8er-Gruppen</option>
+                        <option value="9">9er-Gruppen</option>
+			<option value="10">10er-Gruppen</option>
+                    </select>
+                </div>
+                <div class="setup-row">
+                    <label for="maxTurnsSelect">Versuche pro Team:</label>
+                    <select id="maxTurnsSelect">
+                        <option value="2">2 Versuche</option>
+                        <option value="3" selected>3 Versuche</option>
+                        <option value="4">4 Versuche</option>
+                        <option value="5">5 Versuche</option>
+                    </select>
+                </div>
+<div class="setup-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+    <label>Kategorien wählen (4 markieren):</label>
+    <div id="catContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; width: 100%;">
+        </div>
+</div>
+
+                <button onclick="generateTeamsAndSpeakers()" class="popup-btn btn-orange" style="margin: 0;">🎲 Teams auslosen & Start</button>
+            </div>
+
+            <div class="team-list-container" id="teamList">
+                <div style="text-align: center; color: #475569; font-style: italic; padding: 20px; font-size: 16px;">Noch keine Teams am Start.</div>
+            </div>
+        </div>
+    </div>
+
+<div class="popup-overlay" id="popup">
+        <div class="popup-content">
+            <div class="popup-category" id="popCat">Kategorie</div>
+            <div class="popup-question" id="popQuest">Frage?</div>
+            
+            <div id="timerDisplay" style="font-size: 24px; color: var(--accent); margin: 10px 0; font-weight: 700;">60</div>
+            
+            <div class="popup-answer" id="popAns">Antwort!</div>
+            
+            <button class="popup-btn btn-blue" id="showAnsBtn" onclick="showAnswer()">Antwort zeigen 👀</button>
+            
+            <div id="evaluationControls" style="display: none;">
+                <div class="popup-team-select">
+                    <label for="activeTeamSelect">Welches Team tippt gerade?</label>
+                    <select id="activeTeamSelect"></select>
+                </div>
+                <button class="popup-btn btn-green" onclick="evaluateAnswer(true)">Richtig 👍</button>
+                <button class="popup-btn btn-red" onclick="evaluateAnswer(false)">Falsch 👎</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="winnerPopup">
+        <div class="popup-content winner-content">
+            <div class="winner-title">🏆 SPIEL BEENDET 🏆</div>
+            <div id="winnerText" style="font-size: 30px; font-weight: 700; margin-bottom: 15px;">Team X gewinnt!</div>
+            <div class="winner-score" id="winnerScore">Mit XXX Punkten!</div>
+            <button class="popup-btn btn-green" onclick="document.getElementById('winnerPopup').style.display='none'">Super gespielt! 🎉</button>
+        </div>
+    </div>
+
+<script>
+const SCHUELER_LISTE = [
+     	{ id: 1, name: "Helene", gender: "w" }, { id: 2, name: "Marlene", gender: "w" },
+	{ id: 3, name: "Hevi", gender: "w" }, { id: 4, name: "Mazit", gender: "w" },
+	{ id: 5, name: "Anastasia", gender: "w" }, { id: 6, name: "Isabell", gender: "w" },
+	{ id: 7, name: "Amalie", gender: "w" }, { id: 8, name: "Fatima", gender: "w" },
+	{ id: 9, name: "Sophia", gender: "w" }, { id: 10, name: "Bella", gender: "w" },
+	{ id: 11, name: "Leonie", gender: "w" }, { id: 12, name: "Emily", gender: "w" },
+	{ id: 13, name: "Arbina", gender: "w" }, { id: 14, name: "Joschua", gender: "m" },
+	{ id: 15, name: "Mahan", gender: "m" }, { id: 16, name: "Arda", gender: "m" },
+	{ id: 17, name: "Alex", gender: "m" }, { id: 18, name: "Arnold", gender: "m" },
+	{ id: 19, name: "Anis", gender: "m" }, { id: 20, name: "Mika", gender: "m" },
+	{ id: 21, name: "Tim", gender: "m" }, { id: 22, name: "Emilio", gender: "m" },
+	{ id: 23, name: "Justus", gender: "m" }, { id: 24, name: "Emil", gender: "m" },
+	{ id: 25, name: "Dustin", gender: "m" }, { id: 26, name: "Marco", gender: "m" },
+];
+
+
+
+const ANTI_PAARE = [];
+
+const FRAGEN_DATEN = [
+// --- NAWI-RAUM ---
+{ id: 1, cat: "NaWi-Raum", points: 100, pool: [
+  { q: "Welche Schutzkleidung trägt man bei vielen Experimenten?", a: "Eine Schutzbrille." },
+  { q: "Warum bindet man lange Haare im Labor zusammen?", a: "Zur Sicherheit, damit sie nicht in Stoffe oder Flammen geraten." },
+  { q: "Darf man sein Frühstück im NaWi-Raum essen?", a: "Nein." },
+  { q: "Was benötigen Personen mit langen Haaren im Labor?", a: "Einen Zopfgummi." },
+  { q: "Womit kann man kleine Brände im NaWi-Raum löschen?", a: "Mit einem Feuerlöscher oder einer Löschdecke." }
+]},
+{ id: 2, cat: "NaWi-Raum", points: 200, pool: [
+  { q: "Wie nennt man ein Gefäß zum genauen Abmessen von Flüssigkeiten?", a: "Messzylinder." },
+  { q: "Womit erhitzt man Stoffe häufig im Labor?", a: "Mit einem Bunsenbrenner." },
+  { q: "Darf man seinen Rucksack mit in den NaWi-Raum nehmen?", a: "Nein." }
+]},
+{ id: 3, cat: "NaWi-Raum", points: 300, pool: [
+  { q: "Warum darf man im Labor nicht essen?", a: "Wegen der Gefahr durch Chemikalien oder Verunreinigungen." },
+  { q: "Wie nennt man das Beobachten und genaue Beschreiben eines Versuchs?", a: "Protokollieren." }
+]},
+{ id: 4, cat: "NaWi-Raum", points: 400, pool: [
+  { q: "Was macht man zuerst bei einem Unfall im Labor?", a: "Die Lehrkraft informieren." },
+  { q: "Warum müssen Laborregeln vor Experimenten besprochen werden?", a: "Damit alle sicher arbeiten und Unfälle vermeiden." }
+]},
+
+// --- SINNE ---
+{ id: 5, cat: "Sinne", points: 100, pool: [
+  { q: "Nenne die fünf Sinne.", a: "Sehen, Hören, Riechen, Schmecken und Tasten." },
+  { q: "Mit welchem Organ sehen wir?", a: "Mit den Augen." },
+  { q: "Mit welchem Organ hören wir?", a: "Mit den Ohren." },
+  { q: "Was ist das Farbige im Auge?", a: "Die Iris." },
+  { q: "Wie nennt man die Zellen der Sinnesorgane?", a: "Sinneszellen." }
+]},
+{ id: 6, cat: "Sinne", points: 200, pool: [
+  { q: "Mit welchem Sinnesorgan riechen wir?", a: "Mit der Nase." },
+  { q: "Mit welchem Sinnesorgan schmecken wir?", a: "Mit der Zunge." },
+  { q: "Welche Sinnesorgane benötigt man zum Autofahren besonders?", a: "Augen und Ohren." },
+  { q: "Was ist das größte Organ des Menschen?", a: "Die Haut." },
+  { q: "Eine Lampe ist eine Lichtquelle. Unser Auge ist ein ...?", a: "Lichtempfänger." },
+  { q: "Wie können sich gehörlose Menschen unterhalten?", a: "Mit Gebärdensprache." }
+]},
+{ id: 7, cat: "Sinne", points: 300, pool: [
+  { q: "Welcher Sinn hilft uns beim Gleichgewicht?", a: "Der Gleichgewichtssinn." },
+  { q: "Wo befinden sich die Geschmacksknospen?", a: "Auf der Zunge." }
+]},
+{ id: 8, cat: "Sinne", points: 400, pool: [
+  { q: "Welcher Teil des Auges verändert seine Größe bei Licht?", a: "Die Pupille." },
+  { q: "Welcher Sinn warnt uns vor Gefahren wie Rauch?", a: "Der Geruchssinn." },
+  { q: "Wie heißen die drei Hautschichten?", a: "Oberhaut, Lederhaut und Unterhaut." },
+  { q: "Wie viel wiegt die Haut eines Erwachsenen ungefähr?", a: "Etwa 10 bis 15 kg." }
+]},
+
+// --- WIRBELTIERE ---
+{ id: 9, cat: "Wirbeltiere", points: 100, pool: [
+  { q: "Wie viele Wirbeltierklassen gibt es?", a: "Fünf." },
+  { q: "Was besitzen alle Wirbeltiere?", a: "Eine Wirbelsäule." },
+  { q: "Wie atmen Fische?", a: "Mit Kiemen." },
+  { q: "Womit atmen Säugetiere?", a: "Mit der Lunge." },
+  { q: "Nenne ein Säugetier, das im Wasser lebt.", a: "Zum Beispiel Wal oder Delfin." }
+]},
+{ id: 10, cat: "Wirbeltiere", points: 200, pool: [
+  { q: "Welche Wirbeltierklasse hat Federn?", a: "Vögel." },
+  { q: "Welche Wirbeltierklasse säugt ihre Jungen?", a: "Säugetiere." },
+  { q: "Welche Wirbeltierklasse besitzt Fell oder Haare?", a: "Säugetiere." },
+  { q: "Woran erkennt man Wirbeltiere?", a: "An der Wirbelsäule." },
+  { q: "Wie orientieren sich Fische in der Dunkelheit?", a: "Mit dem Seitenlinienorgan." },
+  { q: "Wann häuten sich Reptilien?", a: "Wenn die alte Haut zu klein geworden ist." }
+]},
+{ id: 11, cat: "Wirbeltiere", points: 300, pool: [
+  { q: "Welche Wirbeltierklasse lebt ausschließlich im Wasser und atmet mit Kiemen?", a: "Fische." },
+  { q: "Zu welcher Wirbeltierklasse gehören Frösche?", a: "Zu den Amphibien." },
+  { q: "Nenne die fünf Wirbeltierklassen.", a: "Fische, Amphibien, Reptilien, Vögel und Säugetiere." },
+  { q: "Woraus besteht die Wirbelsäule?", a: "Aus vielen Wirbeln." },
+  { q: "Wie lange dauert die Brutzeit bei Vögeln ungefähr?", a: "Je nach Art etwa 11 Tage bis 12 Wochen." }
+]},
+{ id: 12, cat: "Wirbeltiere", points: 400, pool: [
+  { q: "Welches Säugetier legt Eier?", a: "Das Schnabeltier." },
+  { q: "Wie groß ist ein Koala bei der Geburt ungefähr?", a: "Etwa 2 cm groß; er passt ungefähr auf einen Teelöffel." },
+  { q: "Wie viele Säugetierarten gibt es ungefähr?", a: "Etwa 5.000." },
+  { q: "Wodurch wird der Wärmeverlust bei Säugetieren verringert?", a: "Durch ein isolierendes Luftpolster zwischen den Fellhaaren." }
+]},
+
+// --- WELT DES KLEINEN ---
+{ id: 13, cat: "Welt des Kleinen", points: 100, pool: [
+  { q: "Mit welchem Gerät betrachtet man sehr kleine Dinge?", a: "Mit einem Mikroskop." },
+  { q: "Wie nennt man den kleinsten lebenden Baustein eines Lebewesens?", a: "Zelle." },
+  { q: "Was macht ein Mikroskop?", a: "Es vergrößert sehr kleine Objekte." }
+]},
+{ id: 14, cat: "Welt des Kleinen", points: 200, pool: [
+  { q: "Wie nennt man einzellige Lebewesen?", a: "Einzeller." },
+  { q: "Wie nennt man mehrzellige Lebewesen?", a: "Mehrzeller." }
+]},
+{ id: 15, cat: "Welt des Kleinen", points: 300, pool: [
+  { q: "Wo befindet sich die Erbinformation einer Zelle?", a: "Im Zellkern." },
+  { q: "Wie nennt man die dünne Schicht, die die Zelle umgibt?", a: "Zellmembran." }
+]},
+{ id: 16, cat: "Welt des Kleinen", points: 400, pool: [
+  { q: "Welche Vergrößerung erhält man durch Okular und Objektiv?", a: "Die Gesamtvergrößerung." },
+  { q: "Wie nennt man Lebewesen, die man nur mit Hilfsmitteln sehen kann?", a: "Mikroorganismen." },
+  { q: "Was macht eine Konvexlinse?", a: "Sie bündelt parallele Lichtstrahlen." }
+]},
+
+// --- SEXUALKUNDE ---
+{ id: 17, cat: "Sexualkunde", points: 100, pool: [
+  { q: "Wie nennt man die körperlichen Veränderungen zwischen Kindheit und Erwachsenenalter?", a: "Pubertät." },
+  { q: "Was löst die Pubertät aus?", a: "Hormone." },
+  { q: "Wann beginnt die Pubertät ungefähr?", a: "Meist zwischen 9 und 14 Jahren." },
+  { q: "Welche Aufgabe hat die Harnblase?", a: "Sie sammelt den Urin." }
+]},
+{ id: 18, cat: "Sexualkunde", points: 200, pool: [
+  { q: "Wie heißt das weibliche Geschlechtshormon?", a: "Östrogen." },
+  { q: "Wie heißt das männliche Geschlechtshormon?", a: "Testosteron." },
+  { q: "Welches Organ produziert Samenzellen?", a: "Die Hoden." },
+  { q: "Wie nennt man die monatliche Blutung bei Mädchen?", a: "Menstruation." },
+  { q: "Zwischen welchem Alter beginnt meist der Bartwuchs?", a: "Meist zwischen 13 und 19 Jahren." }
+]},
+{ id: 19, cat: "Sexualkunde", points: 300, pool: [
+  { q: "Wo entwickelt sich ein Baby vor der Geburt?", a: "In der Gebärmutter." },
+  { q: "Wie lange dauert eine Schwangerschaft ungefähr?", a: "Etwa 9 Monate." },
+  { q: "Welche Aufgabe hat der Eierstock?", a: "Er bildet Eizellen und weibliche Geschlechtshormone." }
+]},
+{ id: 20, cat: "Sexualkunde", points: 400, pool: [
+  { q: "Wie nennt man die Verschmelzung von Ei- und Samenzelle?", a: "Befruchtung." },
+  { q: "Wo reift eine Eizelle heran?", a: "Im Eierstock, in einem Eibläschen." },
+  { q: "Wie oft reift normalerweise eine Eizelle heran?", a: "Etwa einmal im Monat." },
+  { q: "Wie entsteht ein Kind?", a: "Durch die Verschmelzung von Ei- und Samenzelle." }
+]},
+
+// --- LEBEWESEN ---
+{ id: 21, cat: "Lebewesen", points: 100, pool: [
+  { q: "Nenne ein Kennzeichen des Lebens.", a: "Zum Beispiel Wachstum, Fortpflanzung, Stoffwechsel, Bewegung oder Reizbarkeit." },
+  { q: "Nenne zwei Kennzeichen des Lebens.", a: "Zum Beispiel Wachstum und Fortpflanzung." }
+]},
+{ id: 22, cat: "Lebewesen", points: 200, pool: [
+  { q: "Woraus bestehen alle Lebewesen?", a: "Aus Zellen." },
+  { q: "Wie viele Knochen hat ein erwachsener Mensch?", a: "206 Knochen." },
+  { q: "Nenne die fünf Wirbeltierklassen.", a: "Fische, Amphibien, Reptilien, Vögel und Säugetiere." }
+]},
+{ id: 23, cat: "Lebewesen", points: 300, pool: [
+  { q: "Wie nennt man die Weitergabe von Merkmalen an Nachkommen?", a: "Vererbung." },
+  { q: "Warum ist eine Spielzeugmaus kein Lebewesen?", a: "Sie erfüllt nicht alle Kennzeichen des Lebens." },
+  { q: "Welche Hautfarbe haben Eisbären?", a: "Schwarz." },
+  { q: "Sind Spinnen Insekten?", a: "Nein, sie gehören zu den Spinnentieren." }
+]},
+{ id: 24, cat: "Lebewesen", points: 400, pool: [
+  { q: "Welcher Prozess liefert Lebewesen Energie aus Nahrung?", a: "Der Stoffwechsel." },
+  { q: "Wie nennt man die Entwicklung von Lebewesen über lange Zeiträume?", a: "Evolution." },
+  { q: "Wie nennt man das Leuchten von Lebewesen?", a: "Biolumineszenz." }
+]},
+
+// --- PFLANZEN ---
+{ id: 25, cat: "Pflanzen", points: 100, pool: [
+  { q: "Welcher Pflanzenteil nimmt Wasser auf?", a: "Die Wurzel." },
+  { q: "Welcher Pflanzenteil trägt meist die Blätter?", a: "Die Sprossachse." },
+  { q: "Leben Pflanzen? Begründe.", a: "Ja, sie erfüllen die Kennzeichen des Lebens." },
+  { q: "Wie viele Kennzeichen des Lebens gibt es?", a: "Fünf." }
+]},
+{ id: 26, cat: "Pflanzen", points: 200, pool: [
+  { q: "Wie heißt der grüne Farbstoff der Pflanzen?", a: "Chlorophyll." },
+  { q: "Welche Energie benötigen Pflanzen für die Fotosynthese?", a: "Sonnenlicht." },
+  { q: "Wie heißt die Sprossachse bei krautigen Pflanzen?", a: "Stängel." },
+  { q: "Welche Bestäubungsarten gibt es?", a: "Windbestäubung und Insektenbestäubung." },
+  { q: "Warum öffnen Pflanzen ihre Blüten?", a: "Als Reaktion auf Reize, zum Beispiel Licht oder Wärme." }
+]},
+{ id: 27, cat: "Pflanzen", points: 300, pool: [
+  { q: "Wie nennt man die Herstellung von Zucker durch Pflanzen?", a: "Fotosynthese." },
+  { q: "Welches Gas geben Pflanzen bei der Fotosynthese ab?", a: "Sauerstoff." },
+  { q: "Nenne vier Bestandteile einer Pflanzenzelle.", a: "Zum Beispiel Zellkern, Zellwand, Zellmembran und Chloroplasten." },
+  { q: "Wo bilden Pflanzen ihre Nährstoffe?", a: "Vor allem in den Blättern." }
+]},
+{ id: 28, cat: "Pflanzen", points: 400, pool: [
+  { q: "Welches Gas benötigen Pflanzen für die Fotosynthese?", a: "Kohlenstoffdioxid (CO₂)." },
+  { q: "In welchem Pflanzenteil befinden sich meist die Samen?", a: "In der Frucht." },
+  { q: "Nenne die Bestandteile einer Blütenpflanze.", a: "Wurzel, Sprossachse, Blätter und Blüte." }
+]},
+
+// --- STOFFE ---
+{ id: 29, cat: "Stoffe", points: 100, pool: [
+  { q: "Ist Eisen in Wasser löslich?", a: "Nein." },
+  { q: "Nenne eine Stoffeigenschaft von Wasser.", a: "Zum Beispiel Schmelztemperatur oder Siedetemperatur." },
+  { q: "Wie nennen Forschende Materialien?", a: "Stoffe." },
+  { q: "Wie nennt man gefrorenes Wasser?", a: "Eis." },
+  { q: "In welchen drei Aggregatzuständen kann Wasser vorkommen?", a: "Fest, flüssig und gasförmig." }
+]},
+{ id: 30, cat: "Stoffe", points: 200, pool: [
+  { q: "Wie nennt man den Übergang von flüssig zu gasförmig?", a: "Verdampfen." },
+  { q: "Wie nennt man den Übergang von fest zu flüssig?", a: "Schmelzen." }
+]},
+{ id: 31, cat: "Stoffe", points: 300, pool: [
+  { q: "Ist Luft ein Stoffgemisch oder ein Reinstoff?", a: "Ein Stoffgemisch." },
+  { q: "Wie nennt man einen Stoff, der sich in Wasser auflöst?", a: "Löslich." },
+  { q: "Was ist schwerer: 1 cm³ Eisen oder 1 cm³ Wasser?", a: "1 cm³ Eisen ist schwerer." }
+]},
+{ id: 32, cat: "Stoffe", points: 400, pool: [
+  { q: "Wie heißen die winzigen Bausteine, aus denen alle Stoffe aufgebaut sind?", a: "Teilchen." },
+  { q: "Warum riecht Parfüm im ganzen Raum?", a: "Die Teilchen bewegen sich und verteilen sich in der Luft." },
+  { q: "Wie heißt der Übergang von gasförmig direkt zu fest?", a: "Resublimation." },
+  { q: "Was bedeutet Sublimieren?", a: "Der direkte Übergang vom festen in den gasförmigen Zustand." }
+]},
+
+// --- ERNÄHRUNG ---
+{ id: 33, cat: "Ernährung", points: 100, pool: [
+  { q: "Welches Getränk sollte man am meisten trinken?", a: "Wasser." },
+  { q: "Welcher Nährstoff liefert besonders schnell Energie?", a: "Kohlenhydrate." },
+  { q: "Welche Lebensmittelgruppe sollte man am meisten essen?", a: "Getreideprodukte und andere kohlenhydratreiche Lebensmittel." },
+  { q: "Welcher Nährstoff färbt sich mit Iod-Kalium-Iodid blau-schwarz?", a: "Stärke." },
+  { q: "Welche Einheit hat die Energie?", a: "Kilojoule (kJ)." }
+]},
+{ id: 34, cat: "Ernährung", points: 200, pool: [
+  { q: "Welcher Nährstoff hilft beim Muskelaufbau?", a: "Eiweiß beziehungsweise Protein." },
+  { q: "Welcher Nährstoff dient als Energiereserve?", a: "Fette." },
+  { q: "Nenne die Teile des Ernährungskreises.", a: "Getreide, Gemüse, Obst, Milchprodukte, Fleisch/Fisch/Eier sowie Fette und Öle." },
+  { q: "Nenne zwei Vitamine.", a: "Zum Beispiel Vitamin A und Vitamin C." },
+  { q: "Was ist die kleinste Kategorie im Ernährungskreis?", a: "Fette und Öle." },
+  { q: "Wie viel Energie verbraucht das Herz ungefähr?", a: "Etwa 10 Prozent des Energiebedarfs des Körpers." }
+]},
+{ id: 35, cat: "Ernährung", points: 300, pool: [
+  { q: "Wie nennt man Stoffe, die den Körper schützen und regulieren?", a: "Vitamine." },
+  { q: "Welche Lebensmittel enthalten besonders viele Ballaststoffe?", a: "Vollkornprodukte, Obst, Gemüse und Hülsenfrüchte." },
+  { q: "Nenne zwei Lebensmittelunverträglichkeiten.", a: "Zum Beispiel Laktoseintoleranz und Glutenunverträglichkeit." },
+  { q: "Was passiert bei Vitamin-A-Mangel?", a: "Zum Beispiel trockene Haut und Schleimhäute sowie verlangsamtes Wachstum." },
+  { q: "Welches Vitamin ist an der Bildung roter Blutkörperchen beteiligt?", a: "Vitamin B12." }
+]},
+{ id: 36, cat: "Ernährung", points: 400, pool: [
+  { q: "Warum braucht der Körper Mineralstoffe?", a: "Für Knochen, Zähne und wichtige Körperfunktionen." },
+  { q: "Was bedeutet ausgewogene Ernährung?", a: "Von allen wichtigen Nährstoffen genügend aufnehmen." },
+  { q: "Welche Vitamine enthalten Smoothies besonders häufig?", a: "Häufig Vitamin C und Vitamin A." },
+  { q: "Was passiert bei Vitamin-D-Mangel?", a: "Die Knochen können weich werden und leichter brechen." },
+  { q: "Wie heißt die Chemikalie zum Nachweis von Stärke?", a: "Iod-Kalium-Iodid-Lösung." }
+]}
+];
+
+
+let currentCardElement = null;
+let currentPoints = 0;
+let finalTeamsData = []; 
+let maxAllowedTurnsPerTeam = 3;
+
+
+function buildBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = ""; 
+    
+    // Holt die aktuell in der Checkbox-Liste markierten Kategorien
+    const checkboxes = document.querySelectorAll('#catContainer input:checked');
+    const activeCats = Array.from(checkboxes).map(cb => cb.value);
+
+    // Sicherheitsabfrage: Falls nichts gewählt, die ersten 4 aus der Datenliste nehmen
+    const finalCats = activeCats.length === 4 ? activeCats : ["NaWi-Raum", "Sinne", "Wirbeltiere", "Welt des Kleinen"];
+
+    // 1. Kategorien-Header zeichnen
+    finalCats.forEach(cat => {
+        const head = document.createElement('div');
+        head.className = "category-card";
+        head.innerText = cat;
+        board.appendChild(head);
+    });
+
+    // 2. Fragen-Raster (100er bis 400er Reihe)
+    const punkteStufen = [100, 200, 300, 400];
+    punkteStufen.forEach(points => {
+        finalCats.forEach(cat => {
+            const item = FRAGEN_DATEN.find(f => f.cat === cat && f.points === points);
+            const card = document.createElement('div');
+            card.className = item ? "point-card" : "point-card played";
+            card.innerText = item ? item.points : "-";
+            if (item) card.onclick = () => openQuestion(item, card);
+            board.appendChild(card);
+        });
+    });
+}
+
+function openQuestion(item, cardElement) {
+    if (cardElement.classList.contains('played')) return;
+    if (finalTeamsData.length === 0) { alert("Bitte erst Teams auslosen!"); return; }
+    
+    const randomFrage = item.pool[Math.floor(Math.random() * item.pool.length)];
+
+    currentCardElement = cardElement;
+    currentPoints = item.points;
+    document.getElementById('popCat').innerText = `${item.cat} • ${item.points} Punkte`;
+    
+    document.getElementById('popQuest').innerText = randomFrage.q; 
+    document.getElementById('popAns').innerText = `Lösung: ${randomFrage.a}`; 
+    
+    document.getElementById('popAns').style.display = "none";
+    document.getElementById('showAnsBtn').style.display = "inline-block";
+    document.getElementById('evaluationControls').style.display = "none";
+    
+    const select = document.getElementById('activeTeamSelect');
+    select.innerHTML = "";
+    finalTeamsData.forEach((team, idx) => {
+        if (team.turnsPlayed < maxAllowedTurnsPerTeam) {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            const speakerName = team.members.find(m => m.id === team.speakerId)?.name || 'Keiner';
+            opt.innerText = `${team.name} (${speakerName})`;
+            select.appendChild(opt);
+        }
+    });
+    
+    document.getElementById('popup').style.display = "flex";
+    startTimer(60); 
+}
+
+function showAnswer() {
+    clearInterval(timerInterval); // Timer anhalten
+    document.getElementById('showAnsBtn').style.display = "none";
+    document.getElementById('popAns').style.display = "block";
+    document.getElementById('evaluationControls').style.display = "block";
+}
+
+
+function evaluateAnswer(isCorrect) {
+    // 1. Wenn richtig, Punkte zum Team addieren
+    if (isCorrect) {
+        const teamIdx = document.getElementById('activeTeamSelect').value;
+        changeScore(teamIdx, currentPoints);
+        finalTeamsData[teamIdx].turnsPlayed++;
+    } else {
+        // Falls falsch, trotzdem Versuch zählen (optional)
+        const teamIdx = document.getElementById('activeTeamSelect').value;
+        finalTeamsData[teamIdx].turnsPlayed++;
+    }
+
+    // 2. Karte als "gespielt" markieren
+    currentCardElement.classList.add('played');
+    currentCardElement.innerText = "-";
+    currentCardElement.onclick = null; // Klick deaktivieren
+
+    // 3. Popup schließen
+    document.getElementById('popup').style.display = "none";
+    
+    // Sidebar aktualisieren
+    renderTeamsSidebar();
+    
+    // Prüfen, ob das Spiel zu Ende ist
+    checkGameEnd();
+}
+
+function checkGameEnd() {
+    // 1. Prüfen, ob alle Versuche aufgebraucht sind
+    const allTeamsFinished = finalTeamsData.every(team => team.turnsPlayed >= maxAllowedTurnsPerTeam);
+    
+    // 2. Prüfen, ob noch ungelöste Fragen auf dem Board sind
+    // Wir zählen alle point-cards, die NICHT die Klasse 'played' haben
+    const remainingQuestions = document.querySelectorAll('.point-card:not(.played)').length;
+    
+    // Spiel beenden, wenn entweder alle Versuche weg sind ODER keine Fragen mehr da sind
+    if (allTeamsFinished || remainingQuestions === 0) {
+        let winner = finalTeamsData[0];
+        let draw = false;
+        
+        for (let i = 1; i < finalTeamsData.length; i++) {
+            if (finalTeamsData[i].score > winner.score) { 
+                winner = finalTeamsData[i]; 
+                draw = false; 
+            }
+            else if (finalTeamsData[i].score === winner.score) { 
+                draw = true; 
+            }
+        }
+        
+        const textEl = document.getElementById('winnerText');
+        const scoreEl = document.getElementById('winnerScore');
+        
+        if (draw && winner.score > 0) { 
+            textEl.innerText = "Gleichstand! Ein tolles Unentschieden! 🤝"; 
+            scoreEl.innerText = `Die besten Teams teilen sich den Sieg!`; 
+        } else if (winner.score === 0) {
+            textEl.innerText = "Das Spiel ist vorbei.";
+            scoreEl.innerText = "Leider wurden keine Punkte erzielt.";
+        } else { 
+            textEl.innerText = `👑 ${winner.name} holt den Gesamtsieg! 👑`; 
+            scoreEl.innerText = `Mit stolzen ${winner.score} Punkten!`; 
+        }
+        
+        document.getElementById('winnerPopup').style.display = 'flex';
+    }
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function violatesRules(team) {
+    const names = team.map(s => s.name);
+    for (let pair of ANTI_PAARE) if (names.includes(pair[0]) && names.includes(pair[1])) return true;
+    return false;
+}
+
+function generateTeamsAndSpeakers() {
+    const checked = document.querySelectorAll('#catContainer input:checked');
+    if (checked.length !== 4) {
+        alert(`Bitte wähle exakt 4 Kategorien aus!`);
+        return;
+    }
+
+    maxAllowedTurnsPerTeam = parseInt(document.getElementById('maxTurnsSelect').value);
+    const targetSize = parseInt(document.getElementById('teamSizeSelect').value);
+    
+    // NEUE LOGIK:
+    // Wir berechnen die Anzahl der Teams so, dass wir nah an der Zielgröße bleiben
+    // Aber wir lassen den Rest-Schüler lieber in einem Team als ein komplett neues Team zu öffnen
+    let totalTeamsCount = Math.round(SCHUELER_LISTE.length / targetSize);
+    if (totalTeamsCount < 1) totalTeamsCount = 1;
+
+    let success = false, attempts = 0, generated = [];
+    
+    while (attempts < 800 && !success) {
+        attempts++;
+        let alleSchueler = shuffle([...(window.anwesendeSchueler || SCHUELER_LISTE)]);
+        let temporaryTeams = Array.from({ length: totalTeamsCount }, () => []);
+        
+        // Verteilung wie beim Kartenspielen (einer nach dem anderen)
+        alleSchueler.forEach((s, i) => {
+            temporaryTeams[i % totalTeamsCount].push(s);
+        });
+        
+        if (!temporaryTeams.some(violatesRules)) { 
+            generated = temporaryTeams; 
+            success = true; 
+        }
+    }
+
+    // Sprecher-Logik bleibt gleich
+    finalTeamsData = generated.map((team, idx) => {
+        const randomIndex = Math.floor(Math.random() * team.length);
+        return {
+            name: `Team ${idx + 1}`, 
+            score: 0, 
+            turnsPlayed: 0, 
+            members: team, 
+            speakerId: team.length > 0 ? team[randomIndex].id : null
+        };
+    });
+    
+    renderTeamsSidebar(); 
+    buildBoard();
+}
+
+function setSpeaker(teamIdx, studentId) { finalTeamsData[teamIdx].speakerId = studentId; renderTeamsSidebar(); }
+
+function changeScore(teamIdx, amount) { 
+    finalTeamsData[teamIdx].score = Math.max(0, finalTeamsData[teamIdx].score + amount); 
+    renderTeamsSidebar(); 
+}
+
+function renderTeamsSidebar() {
+    const container = document.getElementById('teamList');
+    container.innerHTML = "";
+    finalTeamsData.forEach((team, tIdx) => {
+        const card = document.createElement('div');
+        card.className = "team-card";
+        card.innerHTML = `<div class="team-title"><span>👥 ${team.name}</span><div class="score-control"><span class="score-val">${team.score}</span><button class="score-btn" onclick="changeScore(${tIdx}, 100)">+</button><button class="score-btn" onclick="changeScore(${tIdx}, -100)">-</button></div></div><div class="team-attempts">🎯 Versuche: ${team.turnsPlayed} / ${maxAllowedTurnsPerTeam}</div>`;
+        team.members.forEach(m => {
+            const isSpeaker = (m.id === team.speakerId);
+            const memRow = document.createElement('div');
+            memRow.className = `team-member ${isSpeaker ? 'is-speaker' : ''}`;
+            memRow.innerHTML = `<span>👤 ${m.name}</span> ${isSpeaker ? '<span class="speaker-badge">👑 Sprecher</span>' : ''}`;
+            memRow.onclick = () => setSpeaker(tIdx, m.id);
+            card.appendChild(memRow);
+        });
+        container.appendChild(card);
+    });
+}
+
+function startSpiel() {
+    // 1. Anwesende Schüler filtern
+    const checkedIds = Array.from(document.querySelectorAll('.student-cb:checked')).map(cb => parseInt(cb.value));
+    window.anwesendeSchueler = SCHUELER_LISTE.filter(s => checkedIds.includes(s.id));
+    
+    // 2. Startbildschirm ausblenden
+    document.getElementById('startScreen').style.display = "none";
+    
+    // 3. Teams auslosen/Brett initialisieren
+    generateTeamsAndSpeakers();
+}
+
+window.onload = function() {
+    initCategorySelection();
+    
+    const listDiv = document.getElementById('attendanceList');
+    SCHUELER_LISTE.forEach(s => {
+        const div = document.createElement('div');
+        div.style = "padding: 8px; color: white; display: flex; align-items: center; gap: 10px; cursor: pointer;";
+        div.innerHTML = `<input type="checkbox" checked value="${s.id}" class="student-cb"> ${s.name}`;
+        div.onclick = (e) => { if(e.target.tagName !== 'INPUT') div.querySelector('input').click(); };
+        listDiv.appendChild(div);
+    });
+};
+
+function initCategorySelection() {
+    const container = document.getElementById('catContainer');
+    container.innerHTML = "";
+    // Kategorien aus den Daten extrahieren
+    const uniqueCats = [...new Set(FRAGEN_DATEN.map(f => f.cat))];
+    
+    uniqueCats.forEach((cat, index) => {
+        const label = document.createElement('label');
+        label.style = "font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px; background: #1e293b; border-radius: 6px; color: white;";
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = "checkbox";
+        checkbox.value = cat;
+        
+        // Vorauswahl der ersten 4 Kategorien
+        if (index < 4) checkbox.checked = true;
+
+        // Sicherstellen, dass nur 4 gewählt werden können
+        checkbox.onchange = () => {
+            const checked = document.querySelectorAll('#catContainer input:checked');
+            if (checked.length > 4) {
+                checkbox.checked = false;
+                checkbox.parentElement.style.border = "1px solid #ef4444"; 
+                setTimeout(() => checkbox.parentElement.style.border = "none", 500);
+            }
+        };
+
+        label.appendChild(checkbox);
+        label.append(" " + cat);
+        container.appendChild(label);
+    });
+}
+
+let timerInterval;
+
+function startTimer(duration) {
+    let timer = duration;
+    const display = document.getElementById('timerDisplay');
+    display.innerText = timer;
+    
+    clearInterval(timerInterval); 
+    
+    timerInterval = setInterval(function () {
+        timer--;
+        display.innerText = timer;
+        if (timer <= 0) {
+            clearInterval(timerInterval);
+            display.innerText = "Zeit abgelaufen! ⏰";
+        }
+    }, 1000);
+}
+
+window.onload = function() {
+    // 1. Kategorien-Auswahl initiieren
+    initCategorySelection();
+    
+    // 2. Schüler für den Startbildschirm auflisten
+    const listDiv = document.getElementById('attendanceList');
+    SCHUELER_LISTE.forEach(s => {
+        const div = document.createElement('div');
+        div.style = "padding: 8px; color: white; display: flex; align-items: center; gap: 10px; cursor: pointer;";
+        div.innerHTML = `<input type="checkbox" checked value="${s.id}" class="student-cb"> ${s.name}`;
+        
+        // Klick auf das Div aktiviert/deaktiviert die Checkbox
+        div.onclick = (e) => { 
+            if(e.target.tagName !== 'INPUT') {
+                const cb = div.querySelector('input');
+                cb.checked = !cb.checked;
+            }
+        };
+        listDiv.appendChild(div);
+    });
+};
+
+</script>
+
+</body>
+</html>
